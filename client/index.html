@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B站直播封面截图与实时播放器</title>
+    <!-- 引入外部依赖（FLV/DASH 播放库） -->
+    <script src="https://cdn.jsdelivr.net/npm/flv.js@1.6.2/dist/flv.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/dashjs/5.0.3/legacy/umd/dash.all.min.js"></script>
+    <script>
+        // 验证 DASH 库加载状态
+        if (typeof dashjs === 'undefined') {
+            console.error('DASH库加载失败，将禁用DASH播放功能');
+            window.dashjs = null;
+        } else {
+            console.log('DASH库加载成功，版本:', dashjs.version);
+        }
+    </script>
+    <style>
+        /* 页面样式（与原代码一致，保持视觉效果不变） */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #ff6b9d;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .input-group {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px 0 0 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #ff6b9d;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            cursor: pointer;
+            border-radius: 0 5px 5px 0;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #ff5287;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .result-container {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            display: none;
+        }
+        .info-section {
+            margin-bottom: 30px;
+        }
+        .info-item {
+            margin: 8px 0;
+            font-size: 16px;
+        }
+        .images-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        .image-section {
+            flex: 1;
+            min-width: 300px;
+            text-align: center;
+        }
+        .image-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .live-image {
+            max-width: 100%;
+            max-height: 500px;
+            border-radius: 5px;
+            box-shadow:
