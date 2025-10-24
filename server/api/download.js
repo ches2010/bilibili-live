@@ -1,65 +1,48 @@
 const axios = require('axios');
-const sharp = require('sharp');
 const { COMMON_HEADERS } = require('../utils/config');
 const { validateUrl } = require('../utils/validators');
 
-/**
- * 封面下载API
- */
+// 下载封面
 async function downloadCover(req, res) {
-  try {
-    const { url, roomId = 'unknown' } = req.query;
-    if (!validateUrl(url)) {
-      return res.status(400).send('无效的URL参数');
-    }
+  const { url, roomId } = req.query;
+  if (!validateUrl(url)) {
+    return res.status(400).send('无效的封面URL');
+  }
 
+  try {
     const res = await axios.get(url, {
       headers: COMMON_HEADERS,
-      responseType: 'arraybuffer',
-      timeout: 10000
+      responseType: 'arraybuffer'
     });
-
-    const metadata = await sharp(res.data).metadata();
-    const format = metadata.format || 'jpg';
-    const filename = `封面_${roomId}.${format}`;
-
     res.set({
-      'Content-Type': `image/${format}`,
-      'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`
+      'Content-Type': 'image/jpeg',
+      'Content-Disposition': `attachment; filename="cover_${roomId}.jpg"`
     });
     res.send(res.data);
   } catch (err) {
-    res.status(500).send(`封面下载失败：${err.message}`);
+    res.status(500).send(`下载失败: ${err.message}`);
   }
 }
 
-/**
- * 截图下载API
- */
+// 下载截图
 async function downloadScreenshot(req, res) {
-  try {
-    const { url, roomId = 'unknown' } = req.query;
-    if (!validateUrl(url)) {
-      return res.status(400).send('无效的URL参数');
-    }
+  const { url, roomId } = req.query;
+  if (!validateUrl(url)) {
+    return res.status(400).send('无效的截图URL');
+  }
 
+  try {
     const res = await axios.get(url, {
       headers: COMMON_HEADERS,
-      responseType: 'arraybuffer',
-      timeout: 10000
+      responseType: 'arraybuffer'
     });
-
-    const metadata = await sharp(res.data).metadata();
-    const format = metadata.format || 'jpg';
-    const filename = `截图_${roomId}.${format}`;
-
     res.set({
-      'Content-Type': `image/${format}`,
-      'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`
+      'Content-Type': 'image/jpeg',
+      'Content-Disposition': `attachment; filename="screenshot_${roomId}.jpg"`
     });
     res.send(res.data);
   } catch (err) {
-    res.status(500).send(`截图下载失败：${err.message}`);
+    res.status(500).send(`下载失败: ${err.message}`);
   }
 }
 
