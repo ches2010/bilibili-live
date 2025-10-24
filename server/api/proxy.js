@@ -32,18 +32,35 @@ async function streamProxy(req, res) {
     }
 
     const streamRes = await axios.get(url, {
-      headers: { ...COMMON_HEADERS, Origin: 'https://live.bilibili.com' },
-      responseType: 'stream',
-      timeout: 5000
+      headers: {
+        ...COMMON_HEADERS,
+        'Origin': 'https://live.bilibili.com',
+        'Accept-Encoding': 'identity', // 禁止压缩，避免解析问题
+        'Connection': 'keep-alive'
+      },
+      responseType: 'stream', // 关键：确保以流形式接收
+      timeout: 10000
     });
 
-    res.set({
-      'Content-Type': streamRes.headers['content-type'],
-      'Access-Control-Allow-Origin': '*'
-    });
+    // 复制响应头（排除可能冲突的头）
+    const headers = {
+      'Content-Type': streamRes.headers['content-type'] || 'application/octet-stream',
+      'Access-Control-Allow-Origin': req.headers.origin || '*',
+      'Access-Control-Allow-Credentials': 'true'
+    };
+    res.set(headers);
+
+    // 流式转发
     streamRes.data.pipe(res);
-    req.on('close', () => streamRes.data.destroy());
+
+    // 处理客户端断开连接
+    req.on('close', () => {
+      streamRes.data.destroy();
+      res.end();
+    });
+
   } catch (err) {
+    console.error('流代理错误:', err); // 打印详细错误
     res.status(500).send(`流代理失败: ${err.message}`);
   }
 }
