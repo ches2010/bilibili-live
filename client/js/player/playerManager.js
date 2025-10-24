@@ -29,7 +29,3 @@ export function createVideoElement() {
   currentVideoElement = video;
   return video;
 }
-
-// 导出播放器函数（保持不变）
-export { playFLV } from './flvPlayer.js';
-export { playHLS } from './hlsPlayer.js';
