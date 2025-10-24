@@ -19,8 +19,8 @@ export function getCurrentPlayer() {
   return currentPlayer || currentVideoElement;
 }
 
-// 创建视频元素
-function createVideoElement() {
+// 创建视频元素（关键：添加export导出）
+export function createVideoElement() {
   const video = document.createElement('video');
   video.controls = true;
   video.style.width = '100%';
@@ -30,5 +30,6 @@ function createVideoElement() {
   return video;
 }
 
+// 导出播放器函数（保持不变）
 export { playFLV } from './flvPlayer.js';
 export { playHLS } from './hlsPlayer.js';
