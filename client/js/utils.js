@@ -1,41 +1,17 @@
-/**
- * 显示消息提示
- * @param {string} message - 消息内容
- * @param {boolean} isError - 是否为错误消息
- */
-function showMessage(message, isError = false) {
-  const container = document.getElementById('messageContainer');
-  container.innerHTML = `
-    <div class="${isError ? 'error' : 'success'}">${message}</div>
-  `;
+export function showMessage(text, isError = false) {
+  const container = document.createElement('div');
+  container.className = isError ? 'error' : 'success';
+  container.textContent = text;
+  container.style.padding = '10px';
+  container.style.margin = '10px 0';
+  container.style.borderRadius = '4px';
+  container.style.color = isError ? 'red' : 'green';
+  container.style.border = `1px solid ${isError ? '#ffcccc' : '#ccffcc'}`;
+
+  document.querySelector('.container').prepend(container);
+  setTimeout(() => container.remove(), 3000);
 }
 
-/**
- * 隐藏消息提示
- */
-function hideMessage() {
-  document.getElementById('messageContainer').innerHTML = '';
+export function hideMessage() {
+  document.querySelectorAll('.error, .success').forEach(el => el.remove());
 }
-
-/**
- * 验证直播间ID
- * @param {string} roomId - 直播间ID
- * @returns {boolean} 是否有效
- */
-function validateRoomId(roomId) {
-  return /^\d+$/.test(roomId);
-}
-
-/**
- * 启动直播流定时刷新
- * @param {string} roomId - 直播间ID
- * @param {object} state - 全局状态
- */
-function startStreamRefresh(roomId, state) {
-  clearInterval(state.streamRefreshTimer);
-  state.streamRefreshTimer = setInterval(async () => {
-    // 刷新逻辑见原代码...
-  }, 5 * 60 * 1000);
-}
-
-export { showMessage, hideMessage, validateRoomId, startStreamRefresh };
