@@ -1,7 +1,6 @@
 const axios = require('axios');
 const { COMMON_HEADERS } = require('../utils/config');
 
-// 解析多线路、多画质流地址
 async function getStreamUrls(roomId) {
   try {
     const res = await axios.get('https://api.live.bilibili.com/xlive/web-room/v2/index/getRoomPlayInfo', {
@@ -25,16 +24,19 @@ async function getStreamUrls(roomId) {
     const streams = [];
     const playInfo = res.data.data.playurl_info.playurl;
     
-    // 解析FLV/HLS流地址（保留文件夹方案的核心逻辑）
+    // 解析FLV/HLS流地址
     playInfo.stream.forEach(stream => {
       stream.format.forEach(fmt => {
         fmt.codec.forEach(codec => {
           codec.url_info.forEach(urlInfo => {
             const fullUrl = `${urlInfo.host}${codec.base_url}${urlInfo.extra}`;
+            
+            // 修复：使用条件判断过滤无效地址，不使用continue
             if (!fullUrl.startsWith('http')) {
               console.warn('无效的流地址:', fullUrl);
-              continue; // 跳过无效地址
+              return; // 用return退出当前回调函数，代替continue
             }
+            
             streams.push({
               url: fullUrl,
               format: fmt.format_name,
@@ -52,7 +54,6 @@ async function getStreamUrls(roomId) {
   }
 }
 
-// 接口处理函数
 async function handleGetStreamUrls(req, res) {
   const { room_id } = req.query;
   if (!room_id || !/^\d+$/.test(room_id)) {
