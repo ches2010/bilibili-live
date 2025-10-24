@@ -1,97 +1,66 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>B站直播封面截图与实时播放器</title>
-    <!-- 引入外部依赖 -->
-    <script src="https://cdn.jsdelivr.net/npm/flv.js@1.6.2/dist/flv.min.js"></script>
-    <script src="https://cdn.bootcdn.net/ajax/libs/dashjs/5.0.3/legacy/umd/dash.all.min.js"></script>
-    <!-- 引入外部CSS -->
-    <link rel="stylesheet" href="css/styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>B站直播播放器</title>
+  <script src="https://cdn.jsdelivr.net/npm/flv.js@1.6.2/dist/flv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.12/dist/hls.min.js"></script>
+  <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <div class="container">
-        <h1>📺 B站直播封面截图与实时播放器</h1>
-        
-        <div class="input-group">
-            <input type="text" id="roomIdInput" placeholder="请输入B站直播间ID（如：231054，B站官方直播）">
-            <button id="fetchBtn">获取直播信息</button>
-        </div>
-        
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p>正在获取直播信息...</p>
-        </div>
-        
-        <div class="result-container" id="resultContainer">
-            <div class="info-section">
-                <h3>直播信息</h3>
-                <div class="info-item">
-                    <strong>直播间标题:</strong> <span id="titleDisplay"></span>
-                </div>
-                <div class="info-item">
-                    <strong>主播用户名:</strong> <span id="unameDisplay"></span>
-                </div>
-                <div class="info-item">
-                    <strong>房间ID:</strong> <span id="roomIdDisplay"></span>
-                </div>
-                <div class="info-item">
-                    <strong>直播状态:</strong> 
-                    <span id="statusDisplay"></span>
-                    <span id="statusIndicator" class="status-indicator"></span>
-                </div>
-                <div class="info-item">
-                    <strong>开播时间:</strong> <span id="liveTimeDisplay"></span>
-                </div>
-            </div>
-            
-            <div class="images-container">
-                <!-- 封面图片区域 -->
-                <div class="image-section">
-                    <div class="image-title">直播间封面</div>
-                    <img id="coverImage" class="live-image" alt="直播封面">
-                    <div class="image-info" id="coverImageInfo"></div>
-                    <button class="download-btn" id="downloadCoverBtn">下载封面</button>
-                </div>
-                
-                <!-- 直播截图区域 -->
-                <div class="image-section">
-                    <div class="image-title">当前直播画面截图</div>
-                    <img id="screenshotImage" class="live-image" alt="直播截图">
-                    <div class="image-info" id="screenshotImageInfo"></div>
-                    <button class="download-btn" id="downloadScreenshotBtn">下载截图</button>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 视频播放区域 -->
-        <div class="video-section" id="videoSection">
-            <div class="video-title">实时直播画面</div>
-            <div class="video-container">
-                <div class="play-prompt" id="playPrompt">点击播放</div>
-                <video id="videoPlayer" class="video-player" controls>
-                    您的浏览器不支持视频播放
-                </video>
-                <div class="quality-selector">
-                    <label for="qualitySelect">选择画质/线路: </label>
-                    <select id="qualitySelect">
-                        <option value="">自动</option>
-                    </select>
-                </div>
-                <div class="video-controls">
-                    <button class="video-btn" id="playBtn">播放</button>
-                    <button class="video-btn" id="pauseBtn">暂停</button>
-                    <button class="video-btn" id="reloadBtn">重新加载</button>
-                </div>
-                <div class="video-status" id="videoStatus">未加载直播流</div>
-            </div>
-        </div>
-        
-        <div id="messageContainer"></div>
+  <div class="container">
+    <h1>📺 B站直播播放器</h1>
+    
+    <div class="input-group">
+      <input type="text" id="roomIdInput" placeholder="输入直播间ID（如231054）">
+      <button id="fetchBtn">获取直播信息</button>
     </div>
+    
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <p>加载中...</p>
+    </div>
+    
+    <div class="result-container" id="resultContainer">
+      <div class="info-section">
+        <h3>直播信息</h3>
+        <div class="info-item">标题: <span id="titleDisplay"></span></div>
+        <div class="info-item">主播: <span id="unameDisplay"></span></div>
+        <div class="info-item">状态: <span id="statusDisplay"></span></div>
+        <div class="info-item">开播时间: <span id="liveTimeDisplay"></span></div>
+      </div>
+      
+      <div class="images-container">
+        <div class="image-section">
+          <div class="image-title">封面</div>
+          <img id="coverImage" class="live-image">
+          <button class="download-btn" id="downloadCoverBtn">下载封面</button>
+        </div>
+        <div class="image-section">
+          <div class="image-title">直播截图</div>
+          <img id="screenshotImage" class="live-image">
+          <button class="download-btn" id="downloadScreenshotBtn">下载截图</button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="video-section" id="videoSection">
+      <div class="video-title">直播播放</div>
+      <div class="quality-selector">
+        <label>选择线路: </label>
+        <select id="qualitySelect"></select>
+      </div>
+      <div id="playerArea" class="player-container"></div>
+      <div class="video-controls">
+        <button class="video-btn" id="playBtn">播放</button>
+        <button class="video-btn" id="pauseBtn">暂停</button>
+        <button class="video-btn" id="reloadBtn">重新加载</button>
+      </div>
+      <div class="video-status" id="videoStatus"></div>
+    </div>
+  </div>
 
-    <!-- 引入外部JavaScript -->
-    <script type="module" src="js/main.js"></script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
