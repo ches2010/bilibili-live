@@ -4,266 +4,58 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>B站直播封面截图与实时播放器</title>
-    <!-- 引入外部依赖（FLV/DASH 播放库） -->
+    <!-- 引入外部依赖 -->
     <script src="https://cdn.jsdelivr.net/npm/flv.js@1.6.2/dist/flv.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/dashjs/5.0.3/legacy/umd/dash.all.min.js"></script>
-    <script>
-        // 验证 DASH 库加载状态
-        if (typeof dashjs === 'undefined') {
-            console.error('DASH库加载失败，将禁用DASH播放功能');
-            window.dashjs = null;
-        } else {
-            console.log('DASH库加载成功，版本:', dashjs.version);
-        }
-    </script>
-    <style>
-        /* 页面样式（与原代码一致，保持视觉效果不变） */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            background-color: white;
-            border-radius: 10px;
-            padding: 30px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #ff6b9d;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .input-group {
-            display: flex;
-            margin-bottom: 20px;
-        }
-        input {
-            flex: 1;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 5px 0 0 5px;
-            font-size: 16px;
-        }
-        button {
-            background-color: #ff6b9d;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            cursor: pointer;
-            border-radius: 0 5px 5px 0;
-            font-size: 16px;
-        }
-        button:hover {
-            background-color: #ff5287;
-        }
-        button:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-        .result-container {
-            margin-top: 20px;
-            padding: 20px;
-            border-radius: 5px;
-            background-color: #f9f9f9;
-            display: none;
-        }
-        .info-section {
-            margin-bottom: 30px;
-        }
-        .info-item {
-            margin: 8px 0;
-            font-size: 16px;
-        }
-        .images-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 30px;
-            margin-top: 20px;
-        }
-        .image-section {
-            flex: 1;
-            min-width: 300px;
-            text-align: center;
-        }
-        .image-title {
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #333;
-        }
-        .live-image {
-            max-width: 100%;
-            max-height: 500px;
-            border-radius: 5px;
-            box-shadow:0 4px 8px rgba(0,0,0,0.1); 
-            margin: 0 auto; display: block; }
-        .status-indicator {
-            display: inline-block; 
-            padding: 5px 10px; 
-            border-radius: 15px; 
-            font-size: 14px; 
-            font-weight: bold; 
-            margin-left: 10px; 
-        }
-        .live { 
-            background-color: #e74c3c; 
-            color: white; 
-        }
-        .offline { 
-            background-color: #95a5a6; 
-            color: white; 
-        }
-        .round {
-            background-color: #f39c12; 
-            color: white; 
-        }
-        .error { 
-            color: #e74c3c; 
-            background-color: #ffeaea;
-            padding: 10px; 
-            border-radius: 5px; 
-            margin-top: 10px; 
-        }
-        .success { 
-            color: #27ae60; 
-            background-color: #eafaf1; 
-            padding: 10px; 
-            border-radius: 5px; 
-            margin-top: 10px; 
-        }
-        .loading {
-            text-align: center; 
-            padding: 20px; 
-            display: none; 
-        }
-        .spinner { 
-            border: 4px solid #f3f3f3; 
-            border-top: 4px solid #ff6b9d; 
-            border-radius: 50%; 
-            width: 30px; 
-            height: 30px; 
-            animation: spin 1s linear infinite; 
-            margin: 0 auto; 
-        }
-        @keyframes spin { 
-            0% { 
-                transform: rotate(0deg); 
-            } 100% {
-                transform: rotate(360deg); 
-            } 
-        }
-        .download-btn { 
-            background-color: #3498db; 
-            margin-top: 10px; 
-            margin-left: 10px; 
-        }
-        .download-btn:hover { 
-            background-color: #2980b9;
-        }
-        .image-info { 
-            margin-top: 10px;
-            font-size: 14px; 
-            color: #666; 
-        }
-        .video-section { 
-            margin-top: 30px;
-            padding: 20px; 
-            border-radius: 5px; 
-            background-color: #f9f9f9; 
-            display: none; 
-        }
-        .video-container { 
-            position: relative; 
-            width: 100%; 
-            max-width: 800px; 
-            margin: 0 auto; 
-            text-align: center; 
-        }
-        .video-player { 
-            width: 100%; 
-            max-width: 800px; 
-            height: 450px;
-            background-color: #000; 
-            border-radius: 5px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
-        }
-        .video-controls { 
-            margin-top: 15px; 
-        }
-        .video-btn { 
-            background-color: #9b59b6; 
-            color: white; 
-            border: none; 
-            padding: 10px 15px; 
-            cursor: pointer; 
-            border-radius: 5px; 
-            margin: 0 5px;
-        }
-        .video-btn:hover { 
-            background-color: #8e44ad;
-        }
-        .video-btn:disabled { 
-            background-color: #bdc3c7; 
-            cursor: not-allowed; 
-        }
-        .video-status { 
-            margin-top: 10px; 
-            font-size: 14px; 
-            color: #666; 
-        }
-        .video-title { 
-            font-weight: bold; 
-            margin-bottom: 10px; 
-            color: #333;
-        }
-        .quality-selector { 
-            margin-top: 10px; 
-        }
-        select { 
-            padding: 8px; 
-            border: 1px solid #ddd;
-            border-radius: 4px; 
-        }
-        .play-prompt { 
-            position: absolute; 
-            top: 50%;
-            left: 50%; 
-            transform: translate(-50%, -50%);
-            background-color: rgba(0,0,0,0.7); 
-            color: white; padding: 15px 30px;
-            border-radius: 50px; 
-            font-size: 18px;
-            cursor: pointer; 
-            display: none; 
-        }
-    </style>
+    <!-- 引入外部CSS -->
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
         <h1>📺 B站直播封面截图与实时播放器</h1>
+        
         <div class="input-group">
             <input type="text" id="roomIdInput" placeholder="请输入B站直播间ID（如：231054，B站官方直播）">
             <button id="fetchBtn">获取直播信息</button>
         </div>
-        <div class="loading" id="loading"><div class="spinner"></div><p>正在获取直播信息...</p></div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>正在获取直播信息...</p>
+        </div>
+        
         <div class="result-container" id="resultContainer">
             <div class="info-section">
                 <h3>直播信息</h3>
-                <div class="info-item"><strong>直播间标题:</strong> <span id="titleDisplay"></span></div>
-                <div class="info-item"><strong>主播用户名:</strong> <span id="unameDisplay"></span></div>
-                <div class="info-item"><strong>房间ID:</strong> <span id="roomIdDisplay"></span></div>
-                <div class="info-item"><strong>直播状态:</strong> <span id="statusDisplay"></span><span id="statusIndicator" class="status-indicator"></span></div>
-                <div class="info-item"><strong>开播时间:</strong> <span id="liveTimeDisplay"></span></div>
+                <div class="info-item">
+                    <strong>直播间标题:</strong> <span id="titleDisplay"></span>
+                </div>
+                <div class="info-item">
+                    <strong>主播用户名:</strong> <span id="unameDisplay"></span>
+                </div>
+                <div class="info-item">
+                    <strong>房间ID:</strong> <span id="roomIdDisplay"></span>
+                </div>
+                <div class="info-item">
+                    <strong>直播状态:</strong> 
+                    <span id="statusDisplay"></span>
+                    <span id="statusIndicator" class="status-indicator"></span>
+                </div>
+                <div class="info-item">
+                    <strong>开播时间:</strong> <span id="liveTimeDisplay"></span>
+                </div>
             </div>
+            
             <div class="images-container">
+                <!-- 封面图片区域 -->
                 <div class="image-section">
                     <div class="image-title">直播间封面</div>
                     <img id="coverImage" class="live-image" alt="直播封面">
                     <div class="image-info" id="coverImageInfo"></div>
                     <button class="download-btn" id="downloadCoverBtn">下载封面</button>
                 </div>
+                
+                <!-- 直播截图区域 -->
                 <div class="image-section">
                     <div class="image-title">当前直播画面截图</div>
                     <img id="screenshotImage" class="live-image" alt="直播截图">
@@ -272,14 +64,20 @@
                 </div>
             </div>
         </div>
+        
+        <!-- 视频播放区域 -->
         <div class="video-section" id="videoSection">
             <div class="video-title">实时直播画面</div>
             <div class="video-container">
                 <div class="play-prompt" id="playPrompt">点击播放</div>
-                <video id="videoPlayer" class="video-player" controls>您的浏览器不支持视频播放</video>
+                <video id="videoPlayer" class="video-player" controls>
+                    您的浏览器不支持视频播放
+                </video>
                 <div class="quality-selector">
                     <label for="qualitySelect">选择画质/线路: </label>
-                    <select id="qualitySelect"><option value="">自动</option></select>
+                    <select id="qualitySelect">
+                        <option value="">自动</option>
+                    </select>
                 </div>
                 <div class="video-controls">
                     <button class="video-btn" id="playBtn">播放</button>
@@ -292,6 +90,8 @@
         
         <div id="messageContainer"></div>
     </div>
-    <script src="/client/app.js"></script>
+
+    <!-- 引入外部JavaScript -->
+    <script src="app.js"></script>
 </body>
 </html>
