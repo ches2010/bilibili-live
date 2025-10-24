@@ -1,5 +1,5 @@
 import { getLiveInfo, getStreamUrls } from './api.js';
-import { playFLV, playHLS, destroyPlayer, getCurrentPlayer } from './player/playerManager.js';
+import { destroyPlayer, getCurrentPlayer } from './player/playerManager.js';
 import { showMessage, hideMessage } from './utils.js';
 import { playFLV } from './player/flvPlayer.js';
 import { playHLS } from './player/hlsPlayer.js';
