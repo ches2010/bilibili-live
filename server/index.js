@@ -10,8 +10,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../client')));
 
-// 忽略SSL验证（开发环境用）
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 // 原有API（ches2010方案）
 app.post('/api/bilibili-live-info', getLiveInfo);
