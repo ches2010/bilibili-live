@@ -31,6 +31,10 @@ async function getStreamUrls(roomId) {
         fmt.codec.forEach(codec => {
           codec.url_info.forEach(urlInfo => {
             const fullUrl = `${urlInfo.host}${codec.base_url}${urlInfo.extra}`;
+            if (!fullUrl.startsWith('http')) {
+              console.warn('无效的流地址:', fullUrl);
+              continue; // 跳过无效地址
+            }
             streams.push({
               url: fullUrl,
               format: fmt.format_name,
