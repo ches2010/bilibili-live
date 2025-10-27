@@ -17,9 +17,7 @@
         .status-off { color: #ff3860; }
         .status-replay { color: #ffdd57; }
         footer { margin-top: 30px; text-align: center; color: #888; font-size: 0.9em; }
-        .tab-content { margin-top: 20px; }
-        .tab-pane { display: none; }
-        .tab-pane.active { display: block; }
+        .section-title { margin-top: 30px; padding-bottom: 10px; border-bottom: 2px solid #eee; }
         .images-container { display: flex; flex-wrap: wrap; gap: 30px; margin-top: 20px; }
         .image-section { flex: 1; min-width: 300px; text-align: center; }
         .live-image { max-width: 100%; max-height: 500px; border-radius: 5px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin: 0 auto; display: block; }
@@ -28,6 +26,7 @@
         .live { background-color: #e74c3c; color: white; }
         .offline { background-color: #95a5a6; color: white; }
         .round { background-color: #f39c12; color: white; }
+        .info-box { margin-top: 20px; padding: 15px; border-radius: 6px; background-color: #f9f9f9; }
     </style>
 </head>
 <body>
@@ -35,98 +34,71 @@
     <section class="section">
         <h1 class="title is-3 has-text-centered">B站直播工具集</h1>
         
-        <!-- 标签切换 -->
-        <div class="tabs is-centered">
-            <ul>
-                <li class="is-active" data-tab="stream-tab"><a>直播流播放</a></li>
-                <li data-tab="image-tab"><a>封面与截图</a></li>
-            </ul>
+        <!-- 统一输入区域 -->
+        <div class="field has-addons">
+            <div class="control is-expanded">
+                <input id="roomId" class="input" type="text" placeholder="输入直播间号码，例如：21574414" />
+            </div>
+            <div class="control">
+                <button id="queryBtn" class="button is-primary">查询直播信息</button>
+            </div>
         </div>
 
-        <!-- 直播流播放标签内容 -->
-        <div id="stream-tab" class="tab-pane active">
-            <div class="field has-addons">
-                <div class="control is-expanded">
-                    <input id="roomId" class="input" type="text" placeholder="输入直播间号码，例如：21574414" />
-                </div>
-                <div class="control">
-                    <button id="queryBtn" class="button is-primary">查询</button>
-                </div>
-            </div>
-
-            <div id="loading" class="is-hidden mt-3">
-                <progress class="progress is-small is-info" max="100"></progress>
-            </div>
-
-            <div id="roomInfo" class="mt-4"></div>
-            <div id="result" class="mt-4"></div>
-            <div id="playerArea" class="mt-4"></div>
-            <div id="screenshotArea" class="mt-4"></div>
+        <div id="loading" class="is-hidden mt-3">
+            <progress class="progress is-small is-info" max="100"></progress>
         </div>
 
-        <!-- 封面与截图标签内容 -->
-        <div id="image-tab" class="tab-pane">
-            <div class="field has-addons">
-                <div class="control is-expanded">
-                    <input type="text" id="roomIdInput" class="input" placeholder="请输入B站直播间ID（如：31266282）">
-                </div>
-                <div class="control">
-                    <button id="fetchBtn" class="button is-primary">获取直播信息</button>
-                </div>
+        <!-- 房间基本信息 -->
+        <div id="roomInfo" class="mt-4"></div>
+
+        <!-- 直播流播放区域 -->
+        <h2 class="title is-4 section-title">直播流播放</h2>
+        <div id="streamResult" class="mt-2"></div>
+        <div id="playerArea" class="mt-4"></div>
+        <div id="screenshotArea" class="mt-4"></div>
+
+        <!-- 封面与截图区域 -->
+        <h2 class="title is-4 section-title">封面与截图</h2>
+        <div id="imageMessage" class="mt-2"></div>
+        
+        <div class="info-box">
+            <div class="info-item">
+                <strong>直播间标题:</strong> <span id="titleDisplay">-</span>
+            </div>
+            <div class="info-item">
+                <strong>主播用户名:</strong> <span id="unameDisplay">-</span>
+            </div>
+            <div class="info-item">
+                <strong>直播状态:</strong> 
+                <span id="statusDisplay">-</span>
+                <span id="statusIndicator" class="status-indicator"></span>
+            </div>
+            <div class="info-item">
+                <strong>开播时间:</strong> <span id="liveTimeDisplay">-</span>
+            </div>
+        </div>
+        
+        <div class="images-container">
+            <!-- 封面图片区域 -->
+            <div class="image-section">
+                <div class="image-title">直播间封面</div>
+                <img id="coverImage" class="live-image" alt="直播封面" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 150' %3E%3Crect width='200' height='150' fill='%23eee'/%3E%3Ctext x='100' y='80' font-family='Arial' font-size='14' text-anchor='middle' fill='%23999'%3E等待加载...%3C/text%3E%3C/svg%3E">
+                <div class="image-info" id="coverImageInfo"></div>
+                <button class="button is-info download-btn" id="downloadCoverBtn" disabled>下载封面</button>
             </div>
             
-            <div class="loading" id="imageLoading" style="display: none;">
-                <progress class="progress is-small is-info" max="100"></progress>
-                <p class="has-text-centered">正在获取直播信息...</p>
-            </div>
-            
-            <div id="messageContainer" class="mt-4"></div>
-            
-            <div class="result-container" id="resultContainer" style="display: none;">
-                <div class="box">
-                    <h3 class="title is-5">直播信息</h3>
-                    <div class="info-item">
-                        <strong>直播间标题:</strong> <span id="titleDisplay"></span>
-                    </div>
-                    <div class="info-item">
-                        <strong>主播用户名:</strong> <span id="unameDisplay"></span>
-                    </div>
-                    <div class="info-item">
-                        <strong>房间ID:</strong> <span id="imageRoomIdDisplay"></span>
-                    </div>
-                    <div class="info-item">
-                        <strong>直播状态:</strong> 
-                        <span id="statusDisplay"></span>
-                        <span id="statusIndicator" class="status-indicator"></span>
-                    </div>
-                    <div class="info-item">
-                        <strong>开播时间:</strong> <span id="liveTimeDisplay"></span>
-                    </div>
-                </div>
-                
-                <div class="images-container">
-                    <!-- 封面图片区域 -->
-                    <div class="image-section">
-                        <div class="image-title">直播间封面</div>
-                        <img id="coverImage" class="live-image" alt="直播封面">
-                        <div class="image-info" id="coverImageInfo"></div>
-                        <button class="button is-info download-btn" id="downloadCoverBtn">下载封面</button>
-                    </div>
-                    
-                    <!-- 直播截图区域 -->
-                    <div class="image-section">
-                        <div class="image-title">当前直播画面截图</div>
-                        <img id="screenshotImage" class="live-image" alt="直播截图">
-                        <div class="image-info" id="screenshotImageInfo"></div>
-                        <button class="button is-info download-btn" id="downloadScreenshotBtn">下载截图</button>
-                    </div>
-                </div>
+            <!-- 直播截图区域 -->
+            <div class="image-section">
+                <div class="image-title">当前直播画面截图</div>
+                <img id="screenshotImage" class="live-image" alt="直播截图" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 150' %3E%3Crect width='200' height='150' fill='%23eee'/%3E%3Ctext x='100' y='80' font-family='Arial' font-size='14' text-anchor='middle' fill='%23999'%3E等待加载...%3C/text%3E%3C/svg%3E">
+                <div class="image-info" id="screenshotImageInfo"></div>
+                <button class="button is-info download-btn" id="downloadScreenshotBtn" disabled>下载截图</button>
             </div>
         </div>
     </section>
 
     <footer>
-        <p>💡 FLV 延迟最低，HLS 兼容性最好。截图需先播放视频。</p>
+        <p>💡 输入房间号后点击查询，即可获取所有相关信息</p>
     </footer>
 </div>
 
@@ -134,24 +106,14 @@
 <script src="https://cdn.jsdelivr.net/npm/flv.js@1.5.1/dist/flv.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.10/dist/hls.min.js"></script>
 <script>
-    // 标签切换功能
-    document.querySelectorAll('.tabs li').forEach(tab => {
-        tab.addEventListener('click', () => {
-            // 移除所有活跃状态
-            document.querySelectorAll('.tabs li').forEach(t => t.classList.remove('is-active'));
-            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-            
-            // 设置当前活跃状态
-            tab.classList.add('is-active');
-            const tabId = tab.getAttribute('data-tab');
-            document.getElementById(tabId).classList.add('active');
-        });
-    });
-
-    // 直播流播放相关变量和函数
+    // 全局变量
     let currentPlayer = null;
     let currentVideo = null;
+    let currentRoomId = null;
+    let currentCoverUrl = null;
+    let currentScreenshotUrl = null;
 
+    // 销毁播放器
     function destroyPlayer() {
         if (currentPlayer) {
             if (typeof currentPlayer.destroy === 'function') currentPlayer.destroy();
@@ -159,9 +121,9 @@
         }
         currentVideo = null;
         document.getElementById('playerArea').innerHTML = '';
-        document.getElementById('screenshotArea').innerHTML = '';
     }
 
+    // 播放FLV流
     function playFLV(url) {
         destroyPlayer();
         const container = document.getElementById('playerArea');
@@ -189,6 +151,7 @@
         }
     }
 
+    // 播放HLS流
     function playHLS(url) {
         destroyPlayer();
         const container = document.getElementById('playerArea');
@@ -220,6 +183,7 @@
         }
     }
 
+    // 视频截图
     function takeScreenshot() {
         if (!currentVideo || currentVideo.readyState < 2) {
             alert('请先播放视频并等待加载！');
@@ -236,7 +200,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `bili-live-${Date.now()}.png`;
+            a.download = `bili-live-${currentRoomId}-${Date.now()}.png`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -244,188 +208,147 @@
         }, 'image/png');
     }
 
+    // 复制到剪贴板
     function copyToClipboard(text) {
         navigator.clipboard.writeText(text).then(() => alert('已复制！')).catch(() => alert('复制失败'));
     }
 
-    // 直播流查询按钮事件
+    // 显示消息
+    function showMessage(elementId, message, isError = false) {
+        document.getElementById(elementId).innerHTML = `
+            <div class="${isError ? 'notification is-danger' : 'notification is-success'}">
+                ${message}
+            </div>
+        `;
+    }
+
+    // 清除消息
+    function clearMessage(elementId) {
+        document.getElementById(elementId).innerHTML = '';
+    }
+
+    // 查询按钮事件
     document.getElementById('queryBtn').addEventListener('click', async () => {
         const roomId = document.getElementById('roomId').value.trim();
         if (!roomId) return alert('请输入房间号');
 
-        const roomInfoDiv = document.getElementById('roomInfo');
-        const resultDiv = document.getElementById('result');
-        const loading = document.getElementById('loading');
-
-        roomInfoDiv.innerHTML = '';
-        resultDiv.innerHTML = '';
+        // 重置所有区域
+        document.getElementById('roomInfo').innerHTML = '';
+        document.getElementById('streamResult').innerHTML = '';
+        clearMessage('imageMessage');
         destroyPlayer();
-        loading.classList.remove('is-hidden');
+        document.getElementById('screenshotArea').innerHTML = '';
+        document.getElementById('downloadCoverBtn').disabled = true;
+        document.getElementById('downloadScreenshotBtn').disabled = true;
+        
+        // 显示加载状态
+        document.getElementById('loading').classList.remove('is-hidden');
+        currentRoomId = roomId;
 
         try {
-            const res = await fetch('/api/getStreamUrls', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ roomId })
-            });
-            const data = await res.json();
-            loading.classList.add('is-hidden');
-
-            if (data.error) {
-                roomInfoDiv.innerHTML = `<div class="notification is-danger">${data.message}</div>`;
-                return;
-            }
-
-            const { room_info, streams } = data;
-            let statusClass = 'status-off';
-            if (room_info.is_live) statusClass = 'status-live';
-            else if (room_info.live_status === 2) statusClass = 'status-replay';
-
-            // 显示房间信息
-            roomInfoDiv.innerHTML = `
-                <div class="room-header">
-                    <img src="${room_info.cover || 'https://i0.hdslb.com/bfs/live/new_room_cover/default.jpg'}" 
-                         class="room-cover" alt="封面">
-                    <div>
-                        <h4 class="title is-4">${room_info.title}</h4>
-                        <p><strong>主播：</strong>${room_info.uname}</p>
-                        <p><strong>状态：</strong><span class="${statusClass}">${room_info.status_text}</span></p>
-                        <img src="${room_info.face || 'https://i0.hdslb.com/bfs/face/member/noface.jpg'}" 
-                             class="avatar" alt="头像">
-                    </div>
-                </div>
-            `;
-
-            if (!room_info.is_live) {
-                resultDiv.innerHTML = '<div class="notification is-warning">当前未直播，无法获取流地址</div>';
-                return;
-            }
-
-            // 显示流地址 + 播放按钮
-            let html = '<div class="box"><h5 class="title is-5">可用流地址</h5>';
-            const formats = [
-                { key: 'flv', name: 'FLV', lib: 'flv.js' },
-                { key: 'fmp4', name: 'FMP4 (HLS)', lib: 'hls.js' },
-                { key: 'ts', name: 'HLS (TS)', lib: 'hls.js' }
-            ];
-
-            formats.forEach(fmt => {
-                const stream = streams[fmt.key];
-                if (stream) {
-                    html += `
-                        <p><strong>${fmt.name}</strong>（${stream.label}）
-                            <button class="button is-small copy-btn" onclick="copyToClipboard('${stream.url}')">复制</button>
-                            <button class="button is-small is-success play-btn" 
-                                onclick="play${fmt.lib === 'flv.js' ? 'FLV' : 'HLS'}('${stream.url}')">
-                                播放
-                            </button>
-                        </p>
-                        <div class="stream-url">${stream.url}</div><hr>
-                    `;
-                } else {
-                    html += `<p><strong>${fmt.name}</strong>：不可用</p><hr>`;
-                }
-            });
-
-            html += '</div>';
-            resultDiv.innerHTML = html;
-
-            // 添加截图按钮（仅当有流时）
-            document.getElementById('screenshotArea').innerHTML = `
-                <button class="button is-info screenshot-btn" onclick="takeScreenshot()">📸 截图当前画面</button>
-                <small class="has-text-grey">（需先播放视频）</small>
-            `;
-
-        } catch (err) {
-            loading.classList.add('is-hidden');
-            roomInfoDiv.innerHTML = `<div class="notification is-danger">请求失败：${err.message || '未知错误'}</div>`;
-        }
-    });
-
-    document.getElementById('roomId').addEventListener('keypress', e => {
-        if (e.key === 'Enter') document.getElementById('queryBtn').click();
-    });
-
-    // 封面与截图相关功能
-    document.addEventListener('DOMContentLoaded', function() {
-        const roomIdInput = document.getElementById('roomIdInput');
-        const fetchBtn = document.getElementById('fetchBtn');
-        const resultContainer = document.getElementById('resultContainer');
-        const titleDisplay = document.getElementById('titleDisplay');
-        const unameDisplay = document.getElementById('unameDisplay');
-        const roomIdDisplay = document.getElementById('imageRoomIdDisplay');
-        const statusDisplay = document.getElementById('statusDisplay');
-        const statusIndicator = document.getElementById('statusIndicator');
-        const liveTimeDisplay = document.getElementById('liveTimeDisplay');
-        const coverImage = document.getElementById('coverImage');
-        const screenshotImage = document.getElementById('screenshotImage');
-        const messageContainer = document.getElementById('messageContainer');
-        const loadingDiv = document.getElementById('imageLoading');
-        const downloadCoverBtn = document.getElementById('downloadCoverBtn');
-        const downloadScreenshotBtn = document.getElementById('downloadScreenshotBtn');
-        const coverImageInfo = document.getElementById('coverImageInfo');
-        const screenshotImageInfo = document.getElementById('screenshotImageInfo');
-        
-        function validateRoomId(roomId) {
-            return /^\d+$/.test(roomId);
-        }
-        
-        function showMessage(message, isError = false) {
-            messageContainer.innerHTML = `
-                <div class="${isError ? 'notification is-danger' : 'notification is-success'}">
-                    ${message}
-                </div>
-            `;
-        }
-        
-        function hideMessage() {
-            messageContainer.innerHTML = '';
-        }
-        
-        async function getLiveInfo(roomId) {
-            if (!validateRoomId(roomId)) {
-                showMessage('错误：直播间ID必须是数字！', true);
-                return;
-            }
-            
-            try {
-                loadingDiv.style.display = 'block';
-                resultContainer.style.display = 'none';
-                hideMessage();
-                
-                const response = await fetch('/api/bilibili-live-info', {
+            // 并行请求两个接口
+            const [streamResponse, imageResponse] = await Promise.all([
+                fetch('/api/getStreamUrls', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ roomId })
+                }),
+                fetch('/api/bilibili-live-info', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ room_id: roomId })
-                });
+                })
+            ]);
+
+            // 解析直播流数据
+            const streamData = await streamResponse.json();
+            // 解析封面截图数据
+            const imageData = await imageResponse.json();
+
+            // 处理房间基本信息
+            if (!streamData.error && streamData.room_info) {
+                const room_info = streamData.room_info;
+                let statusClass = 'status-off';
+                if (room_info.is_live) statusClass = 'status-live';
+                else if (room_info.live_status === 2) statusClass = 'status-replay';
+
+                document.getElementById('roomInfo').innerHTML = `
+                    <div class="room-header">
+                        <img src="${room_info.cover || 'https://i0.hdslb.com/bfs/live/new_room_cover/default.jpg'}" 
+                             class="room-cover" alt="封面">
+                        <div>
+                            <h4 class="title is-4">${room_info.title}</h4>
+                            <p><strong>主播：</strong>${room_info.uname}</p>
+                            <p><strong>状态：</strong><span class="${statusClass}">${room_info.status_text}</span></p>
+                            <img src="${room_info.face || 'https://i0.hdslb.com/bfs/face/member/noface.jpg'}" 
+                                 class="avatar" alt="头像">
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 处理直播流信息
+            if (streamData.error) {
+                showMessage('streamResult', streamData.message, true);
+            } else {
+                const { room_info, streams } = streamData;
                 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || `HTTP错误! 状态码: ${response.status}`);
+                if (!room_info.is_live) {
+                    showMessage('streamResult', '当前未直播，无法获取流地址', false);
+                } else {
+                    let html = '<div class="box"><h5 class="title is-5">可用流地址</h5>';
+                    const formats = [
+                        { key: 'flv', name: 'FLV', lib: 'flv.js' },
+                        { key: 'fmp4', name: 'FMP4 (HLS)', lib: 'hls.js' },
+                        { key: 'ts', name: 'HLS (TS)', lib: 'hls.js' }
+                    ];
+
+                    formats.forEach(fmt => {
+                        const stream = streams[fmt.key];
+                        if (stream) {
+                            html += `
+                                <p><strong>${fmt.name}</strong>（${stream.label}）
+                                    <button class="button is-small copy-btn" onclick="copyToClipboard('${stream.url}')">复制</button>
+                                    <button class="button is-small is-success play-btn" 
+                                        onclick="play${fmt.lib === 'flv.js' ? 'FLV' : 'HLS'}('${stream.url}')">
+                                        播放
+                                    </button>
+                                </p>
+                                <div class="stream-url">${stream.url}</div><hr>
+                            `;
+                        } else {
+                            html += `<p><strong>${fmt.name}</strong>：不可用</p><hr>`;
+                        }
+                    });
+
+                    html += '</div>';
+                    document.getElementById('streamResult').innerHTML = html;
+                    
+                    // 添加截图按钮
+                    document.getElementById('screenshotArea').innerHTML = `
+                        <button class="button is-info screenshot-btn" onclick="takeScreenshot()">📸 截图当前画面</button>
+                        <small class="has-text-grey">（需先播放视频）</small>
+                    `;
                 }
+            }
+
+            // 处理封面和截图信息
+            if (imageData.code !== 0) {
+                showMessage('imageMessage', `获取封面截图失败: ${imageData.message || '未知错误'}`, true);
+            } else {
+                const liveInfo = imageData.data;
+                currentCoverUrl = liveInfo.user_cover || '';
+                currentScreenshotUrl = liveInfo.keyframe || '';
                 
-                const data = await response.json();
+                // 更新信息显示
+                document.getElementById('titleDisplay').textContent = liveInfo.title || `直播间${roomId}`;
+                document.getElementById('unameDisplay').textContent = liveInfo.uname || '未知主播';
+                document.getElementById('liveTimeDisplay').textContent = liveInfo.live_time || '未开播';
                 
-                if (data.code !== 0) {
-                    throw new Error(`获取直播信息失败，错误码: ${data.code}, 错误信息: ${data.message || '未知错误'}`);
-                }
-                
-                const liveInfo = data.data;
-                const userCover = liveInfo.user_cover || '';
-                const keyframe = liveInfo.keyframe || '';
-                const title = liveInfo.title || `直播间${roomId}`;
-                const uname = liveInfo.uname || '未知主播';
-                const actualRoomId = liveInfo.room_id || roomId;
-                const liveStatus = liveInfo.live_status || 0;
-                const liveTime = liveInfo.live_time || '未开播';
-                
-                titleDisplay.textContent = title;
-                unameDisplay.textContent = uname;
-                roomIdDisplay.textContent = actualRoomId;
-                
+                // 更新状态显示
                 let statusText = '';
                 let statusClass = '';
-                switch(liveStatus) {
+                switch(liveInfo.live_status || 0) {
                     case 1:
                         statusText = '直播中';
                         statusClass = 'live';
@@ -438,69 +361,65 @@
                         statusText = '未开播';
                         statusClass = 'offline';
                 }
-                statusDisplay.textContent = statusText;
-                statusIndicator.className = `status-indicator ${statusClass}`;
-                liveTimeDisplay.textContent = liveTime;
+                document.getElementById('statusDisplay').textContent = statusText;
+                document.getElementById('statusIndicator').className = `status-indicator ${statusClass}`;
                 
-                if (userCover) {
-                    coverImage.onload = function() {
-                        coverImageInfo.textContent = `封面尺寸: ${this.naturalWidth} × ${this.naturalHeight} 像素`;
+                // 处理封面图片
+                if (currentCoverUrl) {
+                    const coverImg = document.getElementById('coverImage');
+                    coverImg.onload = function() {
+                        document.getElementById('coverImageInfo').textContent = 
+                            `封面尺寸: ${this.naturalWidth} × ${this.naturalHeight} 像素`;
                     };
-                    coverImage.onerror = function() {
-                        coverImageInfo.textContent = '封面图片加载失败';
+                    coverImg.onerror = function() {
+                        document.getElementById('coverImageInfo').textContent = '封面图片加载失败';
                     };
-                    coverImage.src = `/api/image-proxy?url=${encodeURIComponent(userCover)}`;
+                    coverImg.src = `/api/image-proxy?url=${encodeURIComponent(currentCoverUrl)}`;
                     
-                    downloadCoverBtn.onclick = () => {
-                        window.open(`/api/download-cover?url=${encodeURIComponent(userCover)}&roomId=${actualRoomId}`, '_blank');
-                        showMessage(`封面图片正在下载: 封面_${actualRoomId}.jpg`);
+                    // 启用下载按钮
+                    document.getElementById('downloadCoverBtn').disabled = false;
+                    document.getElementById('downloadCoverBtn').onclick = () => {
+                        window.open(`/api/download-cover?url=${encodeURIComponent(currentCoverUrl)}&roomId=${roomId}`, '_blank');
+                        showMessage('imageMessage', `封面图片正在下载: 封面_${roomId}.jpg`);
                     };
                 } else {
-                    coverImageInfo.textContent = '未找到封面图片';
+                    document.getElementById('coverImageInfo').textContent = '未找到封面图片';
                 }
                 
-                if (keyframe) {
-                    screenshotImage.onload = function() {
-                        screenshotImageInfo.textContent = `截图尺寸: ${this.naturalWidth} × ${this.naturalHeight} 像素`;
+                // 处理截图
+                if (currentScreenshotUrl) {
+                    const screenshotImg = document.getElementById('screenshotImage');
+                    screenshotImg.onload = function() {
+                        document.getElementById('screenshotImageInfo').textContent = 
+                            `截图尺寸: ${this.naturalWidth} × ${this.naturalHeight} 像素`;
                     };
-                    screenshotImage.onerror = function() {
-                        screenshotImageInfo.textContent = '截图加载失败，可能直播间未开播或没有截图';
+                    screenshotImg.onerror = function() {
+                        document.getElementById('screenshotImageInfo').textContent = '截图加载失败，可能直播间未开播';
                     };
-                    screenshotImage.src = `/api/image-proxy?url=${encodeURIComponent(keyframe)}`;
+                    screenshotImg.src = `/api/image-proxy?url=${encodeURIComponent(currentScreenshotUrl)}`;
                     
-                    downloadScreenshotBtn.onclick = () => {
-                        window.open(`/api/download-screenshot?url=${encodeURIComponent(keyframe)}&roomId=${actualRoomId}`, '_blank');
-                        showMessage(`直播截图正在下载: 截图_${actualRoomId}.jpg`);
+                    // 启用下载按钮
+                    document.getElementById('downloadScreenshotBtn').disabled = false;
+                    document.getElementById('downloadScreenshotBtn').onclick = () => {
+                        window.open(`/api/download-screenshot?url=${encodeURIComponent(currentScreenshotUrl)}&roomId=${roomId}`, '_blank');
+                        showMessage('imageMessage', `直播截图正在下载: 截图_${roomId}.jpg`);
                     };
                 } else {
-                    screenshotImageInfo.textContent = '未找到直播截图，可能直播间未开播';
+                    document.getElementById('screenshotImageInfo').textContent = '未找到直播截图，可能直播间未开播';
                 }
-                
-                resultContainer.style.display = 'block';
-                showMessage('直播信息获取成功！');
-                
-            } catch (error) {
-                console.error('获取直播信息时发生错误:', error);
-                showMessage(`发生错误: ${error.message}`, true);
-            } finally {
-                loadingDiv.style.display = 'none';
             }
+
+        } catch (err) {
+            showMessage('streamResult', `请求失败：${err.message || '未知错误'}`, true);
+            showMessage('imageMessage', `请求失败：${err.message || '未知错误'}`, true);
+        } finally {
+            document.getElementById('loading').classList.add('is-hidden');
         }
-        
-        fetchBtn.addEventListener('click', function() {
-            const roomId = roomIdInput.value.trim();
-            if (!roomId) {
-                showMessage('请输入直播间ID！', true);
-                return;
-            }
-            getLiveInfo(roomId);
-        });
-        
-        roomIdInput.addEventListener('keypress', function(event) {
-            if (event.key === 'Enter') {
-                fetchBtn.click();
-            }
-        });
+    });
+
+    // 回车查询
+    document.getElementById('roomId').addEventListener('keypress', e => {
+        if (e.key === 'Enter') document.getElementById('queryBtn').click();
     });
 </script>
 </body>
