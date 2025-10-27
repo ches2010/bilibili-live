@@ -1,90 +1,263 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>B站直播工具集</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-    <!-- 引入分离的CSS -->
-    <link rel="stylesheet" href="/css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B站直播&视频工具集</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .container {
+            max-width: 1200px;
+        }
+        .result-card {
+            display: none;
+            margin-top: 20px;
+        }
+        .media-container {
+            margin: 20px 0;
+            width: 100%;
+            min-height: 400px;
+            background-color: #f5f5f5;
+            position: relative;
+        }
+        .cover-image {
+            max-width: 300px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .url-item {
+            word-break: break-all;
+            margin: 5px 0;
+            padding: 8px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+    </style>
 </head>
 <body>
-<div class="container">
-    <section class="section">
-        <h1 class="title is-3 has-text-centered">B站直播工具集</h1>
+    <div class="container is-fluid p-4">
+        <h1 class="title has-text-centered">B站直播&视频工具集</h1>
         
-        <!-- 统一输入区域 -->
-        <div class="field has-addons">
-            <div class="control is-expanded">
-                <input id="roomId" class="input" type="text" placeholder="输入直播间号码，例如：21574414" />
+        <div class="card p-4">
+            <div class="field">
+                <label class="label">请输入直播间号或BV号</label>
+                <div class="control">
+                    <input id="inputId" class="input" type="text" placeholder="例如: 21574414 或 BV1XX4y1P71e">
+                </div>
             </div>
             <div class="control">
-                <button id="queryBtn" class="button is-primary">查询直播信息</button>
+                <button id="queryBtn" class="button is-primary">
+                    <i class="fas fa-search"></i> 查询信息
+                </button>
             </div>
         </div>
 
-        <div id="loading" class="is-hidden mt-3">
-            <progress class="progress is-small is-info" max="100"></progress>
-        </div>
-
-        <!-- 房间基本信息 -->
-        <div id="roomInfo" class="mt-4"></div>
-
-        <!-- 直播流播放区域 -->
-        <h2 class="title is-4 section-title">直播流播放</h2>
-        <div id="streamResult" class="mt-2"></div>
-        <div id="playerArea" class="mt-4"></div>
-        <div id="screenshotArea" class="mt-4"></div>
-
-        <!-- 封面与截图区域 -->
-        <h2 class="title is-4 section-title">封面与截图</h2>
-        <div id="imageMessage" class="mt-2"></div>
-        
-        <div class="info-box">
-            <div class="info-item">
-                <strong>直播间标题:</strong> <span id="titleDisplay">-</span>
+        <!-- 结果展示区域 -->
+        <div id="resultCard" class="card result-card">
+            <div class="card-header">
+                <div class="card-header-title" id="resultTitle">查询结果</div>
             </div>
-            <div class="info-item">
-                <strong>主播用户名:</strong> <span id="unameDisplay">-</span>
-            </div>
-            <div class="info-item">
-                <strong>直播状态:</strong> 
-                <span id="statusDisplay">-</span>
-                <span id="statusIndicator" class="status-indicator"></span>
-            </div>
-            <div class="info-item">
-                <strong>开播时间:</strong> <span id="liveTimeDisplay">-</span>
+            <div class="card-content">
+                <!-- 基本信息 -->
+                <div id="basicInfo" class="content"></div>
+                
+                <!-- 封面区域 -->
+                <div class="mt-4">
+                    <h3 class="subtitle">封面</h3>
+                    <div id="coverContainer"></div>
+                </div>
+                
+                <!-- 播放器区域 -->
+                <div class="mt-4">
+                    <h3 class="subtitle">在线播放</h3>
+                    <div class="media-container">
+                        <video id="player" class="video-js vjs-default-skin" controls width="100%" height="100%"></video>
+                    </div>
+                </div>
+                
+                <!-- 播放地址区域 -->
+                <div class="mt-4">
+                    <h3 class="subtitle">可用播放地址</h3>
+                    <div id="urlsContainer"></div>
+                </div>
             </div>
         </div>
-        
-        <div class="images-container">
-            <!-- 封面图片区域 -->
-            <div class="image-section">
-                <div class="image-title">直播间封面</div>
-                <img id="coverImage" class="live-image" alt="直播封面" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 150' %3E%3Crect width='200' height='150' fill='%23eee'/%3E%3Ctext x='100' y='80' font-family='Arial' font-size='14' text-anchor='middle' fill='%23999'%3E等待加载...%3C/text%3E%3C/svg%3E">
-                <div class="image-info" id="coverImageInfo"></div>
-                <button class="button is-info download-btn" id="downloadCoverBtn" disabled>下载封面</button>
-            </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/flv.js@1.6.2/dist/flv.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.1.5/dist/hls.min.js"></script>
+    <script>
+        document.getElementById('queryBtn').addEventListener('click', async () => {
+            const input = document.getElementById('inputId').value.trim();
+            if (!input) {
+                alert('请输入直播间号或BV号');
+                return;
+            }
+
+            let result, apiUrl;
             
-            <!-- 直播截图区域 -->
-            <div class="image-section">
-                <div class="image-title">当前直播画面截图</div>
-                <img id="screenshotImage" class="live-image" alt="直播截图" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 150' %3E%3Crect width='200' height='150' fill='%23eee'/%3E%3Ctext x='100' y='80' font-family='Arial' font-size='14' text-anchor='middle' fill='%23999'%3E等待加载...%3C/text%3E%3C/svg%3E">
-                <div class="image-info" id="screenshotImageInfo"></div>
-                <button class="button is-info download-btn" id="downloadScreenshotBtn" disabled>下载截图</button>
-            </div>
-        </div>
-    </section>
+            // 判断输入类型
+            if (!isNaN(input)) {
+                // 直播间号
+                apiUrl = `/api/live/info?roomId=${input}`;
+            } else if (input.startsWith('BV')) {
+                // BV号
+                apiUrl = `/api/video/info?bvId=${input}`;
+            } else {
+                alert('请输入有效的直播间号或BV号');
+                return;
+            }
 
-    <footer>
-        <p>💡 输入房间号后点击查询，即可获取所有相关信息</p>
-    </footer>
-</div>
+            try {
+                const response = await fetch(apiUrl);
+                result = await response.json();
+                
+                if (result.error) {
+                    alert(result.error);
+                    return;
+                }
 
-<!-- 播放器库 -->
-<script src="https://cdn.jsdelivr.net/npm/flv.js@1.6.2/dist/flv.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/hls.js@1.6.13/dist/hls.min.js"></script>
-<!-- 引入分离的JS -->
-<script src="/js/script.js"></script>
+                displayResult(result);
+            } catch (error) {
+                alert('查询失败: ' + error.message);
+            }
+        });
+
+        function displayResult(result) {
+            const resultCard = document.getElementById('resultCard');
+            const resultTitle = document.getElementById('resultTitle');
+            const basicInfo = document.getElementById('basicInfo');
+            const coverContainer = document.getElementById('coverContainer');
+            const urlsContainer = document.getElementById('urlsContainer');
+            const player = document.getElementById('player');
+
+            // 重置播放器
+            player.pause();
+            player.src = '';
+            
+            // 显示结果卡片
+            resultCard.style.display = 'block';
+
+            // 设置标题
+            resultTitle.textContent = result.type === 'live' ? '直播信息' : '视频信息';
+
+            // 显示基本信息
+            if (result.type === 'live') {
+                basicInfo.innerHTML = `
+                    <p><strong>直播间标题:</strong> ${result.info.title}</p>
+                    <p><strong>主播:</strong> ${result.info.uname}</p>
+                    <p><strong>直播状态:</strong> ${result.info.live_status === 1 ? '直播中' : '未开播'}</p>
+                    <p><strong>分区:</strong> ${result.info.parent_area_name} - ${result.info.area_name}</p>
+                    <p><strong>观看人数:</strong> ${result.info.online}</p>
+                `;
+            } else {
+                basicInfo.innerHTML = `
+                    <p><strong>视频标题:</strong> ${result.info.title}</p>
+                    <p><strong>UP主:</strong> ${result.info.owner.name}</p>
+                    <p><strong>发布时间:</strong> ${new Date(result.info.pubdate * 1000).toLocaleString()}</p>
+                    <p><strong>时长:</strong> ${formatSeconds(result.info.duration)}</p>
+                    <p><strong>播放量:</strong> ${result.info.stat.view}</p>
+                    <p><strong>点赞数:</strong> ${result.info.stat.like}</p>
+                `;
+            }
+
+            // 显示封面
+            const coverUrl = result.type === 'live' 
+                ? result.info.user_cover 
+                : result.info.pic;
+                
+            coverContainer.innerHTML = `
+                <img src="${coverUrl}" class="cover-image" alt="封面">
+                <a href="${coverUrl}" class="button is-small is-link ml-2" download>
+                    <i class="fas fa-download"></i> 下载封面
+                </a>
+            `;
+
+            // 显示播放地址
+            urlsContainer.innerHTML = '';
+            result.playUrls.forEach((urlObj, index) => {
+                const urlItem = document.createElement('div');
+                urlItem.className = 'url-item';
+                urlItem.innerHTML = `
+                    <p><strong>地址 ${index + 1}:</strong> ${urlObj.url}</p>
+                    <button class="button is-small is-info copy-btn" data-url="${urlObj.url}">
+                        <i class="fas fa-copy"></i> 复制
+                    </button>
+                `;
+                urlsContainer.appendChild(urlItem);
+            });
+
+            // 添加复制功能
+            document.querySelectorAll('.copy-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const url = btn.getAttribute('data-url');
+                    navigator.clipboard.writeText(url).then(() => {
+                        alert('复制成功');
+                    });
+                });
+            });
+
+            // 初始化播放器
+            if (result.playUrls.length > 0) {
+                initPlayer(player, result.playUrls[0].url, result.type);
+            }
+        }
+
+        function initPlayer(videoElement, url, type) {
+            // 销毁可能存在的播放器实例
+            if (window.flvPlayer) {
+                window.flvPlayer.destroy();
+                window.flvPlayer = null;
+            }
+            if (window.hlsPlayer) {
+                window.hlsPlayer.destroy();
+                window.hlsPlayer = null;
+            }
+
+            videoElement.src = '';
+            
+            // 根据不同类型和格式初始化播放器
+            if (url.includes('.flv') && flvjs.isSupported()) {
+                window.flvPlayer = flvjs.createPlayer({
+                    type: 'flv',
+                    url: url
+                });
+                window.flvPlayer.attachMediaElement(videoElement);
+                window.flvPlayer.load();
+                window.flvPlayer.play();
+            } else if (url.includes('.m3u8') && Hls.isSupported()) {
+                window.hlsPlayer = new Hls();
+                window.hlsPlayer.loadSource(url);
+                window.hlsPlayer.attachMedia(videoElement);
+                window.hlsPlayer.on(Hls.Events.MANIFEST_PARSED, () => {
+                    videoElement.play();
+                });
+            } else {
+                // 普通视频格式
+                videoElement.src = url;
+                videoElement.play();
+            }
+        }
+
+        // 辅助函数: 将秒数转换为时分秒格式
+        function formatSeconds(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = seconds % 60;
+            return [
+                h.toString().padStart(2, '0'),
+                m.toString().padStart(2, '0'),
+                s.toString().padStart(2, '0')
+            ].join(':');
+        }
+
+        // 支持回车键查询
+        document.getElementById('inputId').addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('queryBtn').click();
+            }
+        });
+    </script>
 </body>
 </html>
