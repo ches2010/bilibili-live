@@ -1,0 +1,14 @@
+{
+  "name": "bilibili-live-tools",
+  "version": "1.0.0",
+  "description": "B站直播监控与封面截图工具",
+  "main": "app.js",
+  "dependencies": {
+    "express": "^4.18.2",
+    "axios": "^1.6.2",
+    "sharp": "^0.32.6"
+  },
+  "scripts": {
+    "start": "node app.js"
+  }
+}
