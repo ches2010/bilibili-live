@@ -163,9 +163,10 @@
             }
 
             // 显示封面
-            const coverUrl = result.type === 'live' 
+            const coverUrl = (result.type === 'live' 
                 ? result.info.user_cover 
-                : result.info.pic;
+                : result.info.pic
+            ).replace(/^http:/, 'https:'); // 将http:替换为https:
                 
             coverContainer.innerHTML = `
                 <img src="${coverUrl}" class="cover-image" alt="封面">
