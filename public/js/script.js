@@ -61,10 +61,48 @@ function playHLS(url) {
     container.appendChild(box);
 
     if (Hls.isSupported()) {
-        const hls = new Hls();
+        // 增加加载器配置，避免 responseType 冲突
+        const hls = new Hls({
+            maxBufferLength: 30,
+            maxMaxBufferLength: 60,
+            loader: {
+                // 显式指定 xhr 配置
+                xhrSetup: function(xhr) {
+                    // 移除可能的扩展监听
+                    xhr.removeEventListener('readystatechange', null, false);
+                    // 确保 responseType 正确设置
+                    xhr.responseType = 'arraybuffer';
+                }
+            }
+        });
+        
         hls.loadSource(url);
         hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(e => console.warn('播放被阻止:', e)));
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            video.play().catch(e => console.warn('播放被阻止:', e));
+        });
+        
+        // 监听错误事件并尝试恢复
+        hls.on(Hls.Events.ERROR, (event, data) => {
+            console.error('HLS 错误:', data);
+            if (data.fatal) {
+                switch(data.type) {
+                    case Hls.ErrorTypes.NETWORK_ERROR:
+                        console.log('尝试恢复网络连接...');
+                        hls.startLoad();
+                        break;
+                    case Hls.ErrorTypes.MEDIA_ERROR:
+                        console.log('尝试恢复媒体播放...');
+                        hls.recoverMediaError();
+                        break;
+                    default:
+                        // 无法恢复的错误，销毁播放器
+                        destroyPlayer();
+                        break;
+                }
+            }
+        });
+        
         currentPlayer = hls;
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
         video.src = url;
