@@ -6,48 +6,38 @@ const { getAllStreamUrls, verifyRoom } = require('../services/streamService');
  * 获取直播流地址接口
  * POST /api/getStreamUrls
  */
-router.post('/getStreamUrls', async (req, res) => {
+router.get('/proxy-stream', async (req, res) => {
     try {
-        const { roomId } = req.body;
-        if (!roomId || !/^\d+$/.test(roomId)) {
-            return res.status(400).json({
-                error: true,
-                message: "请输入有效的直播间号码"
-            });
+        const { url } = req.query;
+        if (!url || !url.includes('bilibili.com')) {
+            return res.status(400).send('无效的流地址');
         }
 
-        // 验证房间并获取基本信息
-        const { room_info } = await verifyRoom(roomId);
-
-        // 如果未直播，不获取流地址
-        if (!room_info.is_live) {
-            return res.json({
-                error: false,
-                room_info,
-                streams: null
-            });
-        }
-
-        // 获取流地址
-        const streams = await getAllStreamUrls(roomId);
-        const streamResult = {};
-        for (const key of ["flv", "fmp4", "ts"]) {
-            streamResult[key] = streams[key] 
-                ? { label: streams[key].label, url: streams[key].url }
-                : null;
-        }
-
-        return res.json({
-            error: false,
-            room_info,
-            streams: streamResult
+        // 转发请求时添加完整头信息
+        const response = await axios.get(url, {
+            headers: {
+                "User-Agent": HEADERS["User-Agent"],
+                "Referer": "https://live.bilibili.com/",
+                "Origin": "https://live.bilibili.com",
+                "Accept": "*/*",
+                "Range": req.headers.range || "bytes=0-"
+            },
+            responseType: 'stream',
+            timeout: 10000
         });
 
+        // 转发响应头
+        res.set({
+            'Content-Type': response.headers['content-type'],
+            'Content-Length': response.headers['content-length'],
+            'Accept-Ranges': response.headers['accept-ranges'] || 'bytes'
+        });
+
+        // 转发流数据
+        response.data.pipe(res);
     } catch (error) {
-        return res.status(500).json({
-            error: true,
-            message: `获取失败: ${error.message}`
-        });
+        console.error('流代理失败:', error.message);
+        res.status(500).send(`流代理失败: ${error.message}`);
     }
 });
 

@@ -17,6 +17,9 @@ export function destroyPlayer() {
 
 // 播放FLV流
 export function playFLV(url) {
+    // 使用后端代理地址（关键！）
+    const proxyUrl = `/api/proxy-stream?url=${encodeURIComponent(url)}`;
+    
     destroyPlayer();
     const container = document.getElementById('playerArea');
     const video = document.createElement('video');
@@ -33,7 +36,8 @@ export function playFLV(url) {
     container.appendChild(box);
 
     if (flvjs.isSupported()) {
-        const player = flvjs.createPlayer({ type: 'flv', url });
+        // 使用代理后的URL
+        const player = flvjs.createPlayer({ type: 'flv', url: proxyUrl });
         player.attachMediaElement(video);
         player.load();
         player.play().catch(e => console.warn('播放被阻止:', e));
@@ -45,6 +49,7 @@ export function playFLV(url) {
 
 // 播放HLS流（优化版，解决之前的XMLHttpRequest错误）
 export function playHLS(url) {
+    const proxyUrl = `/api/proxy-stream?url=${encodeURIComponent(url)}`;
     destroyPlayer();
     const container = document.getElementById('playerArea');
     const video = document.createElement('video');

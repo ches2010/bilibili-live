@@ -53,15 +53,31 @@ async function getLiveInfo(roomId) {
  */
 async function proxyImage(url) {
     try {
+        // 验证URL是否有效（B站图片通常以http/https开头）
+        if (!url.startsWith('http')) {
+            throw new Error('无效的图片URL');
+        }
+
+        // 添加更完整的请求头
+        const headers = {
+            ...HEADERS,
+            "Origin": "https://live.bilibili.com",
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+            "Connection": "keep-alive"
+        };
+
         const response = await axios.get(url, {
-            headers: HEADERS,
+            headers,
             responseType: 'arraybuffer',
-            timeout: 10000
+            timeout: 10000,
+            // 允许重定向
+            maxRedirects: 5
         });
 
-        // 使用sharp处理图片（保持原格式）
         return await sharp(response.data).toBuffer();
     } catch (error) {
+        // 更详细的错误日志
+        console.error(`图片代理失败 [${url}]:`, error.message);
         throw new Error(`图片代理失败: ${error.message}`);
     }
 }

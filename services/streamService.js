@@ -16,9 +16,18 @@ async function getAllStreamUrls(roomId) {
             "qn": 10000
         };
 
+        // 添加更完整的请求头，模拟真实浏览器
+        const headers = {
+            ...HEADERS,
+            "Origin": "https://live.bilibili.com",  // 关键：添加Origin头
+            "Accept": "*/*",
+            "Connection": "keep-alive",
+            "Range": "bytes=0-"  // 部分流需要Range头
+        };
+
         const response = await axios.get(PLAY_INFO_API, { 
             params, 
-            headers: HEADERS,
+            headers,  // 使用新的headers
             timeout: 10000
         });
         
